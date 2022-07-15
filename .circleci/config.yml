@@ -180,9 +180,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible
-            apk add --update tar 
-            apk add --update gzip
+            apk add --update ansible tar gzip nodejs npm curl git openssh-client
             pip install awscli
       - run:
           name: Configure server
@@ -197,6 +195,13 @@ jobs:
       - image: python:3.10-alpine3.16
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip nodejs npm curl git openssh-client
+            pip install awscli
       - run:
           name: Run migrations
           command: |
