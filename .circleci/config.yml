@@ -99,12 +99,12 @@ jobs:
             cd frontend
             npm install
             npm audit fix --audit-level=critical
- #     - slack/notify:
- #         event: fail
- #         template: basic_fail_1
- #     - slack/notify:
- #         event: pass
- #         template: basic_success_1    
+    #  - slack/notify:
+    #      event: fail
+    #      template: basic_fail_1
+    #  - slack/notify:
+    #      event: pass
+    #      template: basic_success_1    
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-scan
@@ -138,22 +138,22 @@ jobs:
     steps:
       - checkout
       - run: yum install -y tar gzip
-      - run:
-          name: Ensure back-end infrastructure exists
-          command: |
-            aws cloudformation deploy \
-              --template-file .circleci/files/backend.yml \
-              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-              --tags project=udapeople
-      - run:
-          name: Ensure front-end infrastructure exists
-          command: |
-            aws cloudformation deploy \
-              --template-file .circleci/files/frontend.yml \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-              --tags project=udapeople
+      # - run:
+      #     name: Ensure back-end infrastructure exists
+      #     command: |
+      #       aws cloudformation deploy \
+      #         --template-file .circleci/files/backend.yml \
+      #         --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+      #         --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+      #         --tags project=udapeople
+      # - run:
+      #     name: Ensure front-end infrastructure exists
+      #     command: |
+      #       aws cloudformation deploy \
+      #         --template-file .circleci/files/frontend.yml \
+      #         --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+      #         --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+      #         --tags project=udapeople
       - run:
           name: Add back-end ip to ansible inventory
           command: |
@@ -167,6 +167,30 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           circle_workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"      
+
+  configure-infrastructure:
+    docker:
+      - image: python:3.10-alpine3.16
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: [08:30:0c:48:1e:65:16:21:45:56:ec:5f:0b:d7:68:50]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            apk add --update tar 
+            apk add --update gzip
+            pip install awscli
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
+            
+      # Here's where you will add some code to rollback on failure  
 
 
 workflows:
@@ -184,3 +208,6 @@ workflows:
           requires: [test-backend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [master]
