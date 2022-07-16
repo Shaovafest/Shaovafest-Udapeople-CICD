@@ -99,12 +99,12 @@ jobs:
             cd frontend
             npm install
             npm audit fix --audit-level=critical
-    #  - slack/notify:
-    #      event: fail
-    #      template: basic_fail_1
-    #  - slack/notify:
-    #      event: pass
-    #      template: basic_success_1    
+      # - slack/notify:
+      #     event: fail
+      #     template: basic_fail_1
+      # - slack/notify:
+      #     event: pass
+      #     template: basic_success_1    
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
@@ -122,13 +122,12 @@ jobs:
             cd backend
             npm install
             npm audit fix --audit-level=critical
-            cat ${CIRCLE_WORKFLOW_ID:0:7}
- #     - slack/notify:
- #         event: fail
- #         template: basic_fail_1
- #     - slack/notify:
- #         event: pass
- #         template: basic_success_1 
+    #  - slack/notify:
+    #      event: fail
+    #      template: basic_fail_1
+    #  - slack/notify:
+    #      event: pass
+    #      template: basic_success_1 
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
@@ -272,15 +271,14 @@ workflows:
           requires: [test-frontend]
       - scan-backend:
           requires: [test-backend]
-      # - deploy-infrastructure:
-      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-      #     filters:
-      #       branches:
-      #         only: [master]
-      
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
-      # - deploy-frontend:
-      #     requires: [run-migrations]
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [master]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
