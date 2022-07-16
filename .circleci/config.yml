@@ -67,7 +67,7 @@ jobs:
             npm run test
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-test
+          key: frontend-build
 
   test-backend:
     docker:
@@ -84,7 +84,7 @@ jobs:
             npm run test
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-test
+          key: backend-build
 
   scan-frontend:
     docker:
@@ -92,7 +92,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-test]
+          keys: [frontend-build]
       - run:
           name: scan frontend
           command: |
@@ -107,7 +107,7 @@ jobs:
     #      template: basic_success_1    
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-scan
+          key: frontend-build
 
   scan-backend:
     docker:
@@ -115,7 +115,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-test]
+          keys: [backend-build]
       - run:
           name: scan backend
           command: |
@@ -130,7 +130,7 @@ jobs:
  #         template: basic_success_1 
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-scan
+          key: backend-build
 
   deploy-infrastructure:
     docker:
@@ -159,8 +159,8 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=${CIRCLE_WORKFLOW_ID:0:7}" \
-              --output text >> inventory
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text >> inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
@@ -215,7 +215,9 @@ jobs:
             then
                 curl --insecure https://kvdb.io/37VcBf9rjuVfNrWwVMc4Vm/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
      # Here's where you will add some code to rollback on failure      
 
 
