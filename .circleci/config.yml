@@ -376,10 +376,45 @@ jobs:
             else
               return 1
             fi
-      # - destroy-environment:
-      #     workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"  
-      # - revert-migrations: 
-      #     workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}" 
+      - destroy-environment:
+          workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"  
+      - revert-migrations: 
+          workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}" 
+
+  cloudfront-update:
+    docker:
+     - image: python:3.7-alpine3.16
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip nodejs npm curl git openssh-client
+            pip install awscli
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            OldWorkflowID=$(aws cloudformation \
+            list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+            --no-paginate --output text)
+            touch OldWorkflowID.txt
+            echo "$OldWorkflowID" >> ~/OldWorkflowID.txt
+            cat ~/OldWorkflowID.txt
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name InitialStack \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
+            echo "OldWorkflowID: ${OldWorkflowID}"
+            echo "Current Workflow Id: ${CIRCLE_WORKFLOW_ID:0:7}"
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - OldWorkflowID.txt
+      - destroy-environment:
+          workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
                 
 
 workflows:
