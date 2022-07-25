@@ -352,15 +352,15 @@ jobs:
             apk add --update tar gzip nodejs npm curl git openssh-client 
             pip install awscli
       - run:
-          name: Get backend url / smoke test
+          name: Backend smoke test.
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances \
+            export BACKEND_HOSTNAME=$(aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --filters Name=instance-state-name,Values=running Name=tag:project,Values=backend-infra \
             --output text)
-
-            export API_URL="http://${BACKEND_IP}:3030"
+            export API_URL="http://${BACKEND_HOSTNAME}:3030"
             echo "${API_URL}"
+            sleep 1m
             if curl "${API_URL}/api/status" | grep "ok"
             then
                 return 0
